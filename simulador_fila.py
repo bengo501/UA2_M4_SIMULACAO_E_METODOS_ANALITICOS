@@ -1,6 +1,6 @@
 import random
 
-# Parâmetros do gerador congruente linear
+#parâmetros do gerador linear congruente
 class RandomGenerator:
     def __init__(self, seed=1, a=1664525, c=1013904223, M=2**32):
         self.previous = seed
@@ -10,9 +10,9 @@ class RandomGenerator:
     
     def NextRandom(self):
         self.previous = (self.a * self.previous + self.c) % self.M
-        return self.previous / self.M if self.M != 0 else 0  # Evita divisão por zero
+        return self.previous / self.M if self.M != 0 else 0  #evita divisão por zero
 
-# Simulador de fila genérico
+#simulador de fila 
 class QueueSimulator:
     def __init__(self, num_servers, capacity, arrival_min, arrival_max, service_min, service_max, num_events=100000):
         self.num_servers = num_servers
@@ -24,12 +24,12 @@ class QueueSimulator:
         self.num_events = num_events
         self.generator = RandomGenerator(seed=42)
         
-        self.clock = 0  # Tempo atual
-        self.queue = []  # Lista de clientes na fila
-        self.servers = [None] * num_servers  # Estado dos servidores
-        self.events = []  # Lista de eventos futuros
-        self.clients_lost = 0  # Contador de clientes perdidos
-        self.time_in_state = {i: 0 for i in range(capacity + 1)}  # Tempo em cada estado
+        self.clock = 0  #tempo atual
+        self.queue = []  #lista de clientes na fila
+        self.servers = [None] * num_servers  #estado dos servidores
+        self.events = []  #lista de eventos futuros
+        self.clients_lost = 0  #contador de clientes perdidos
+        self.time_in_state = {i: 0 for i in range(capacity + 1)}  #tempo em cada estado
         self.last_event_time = 0
         
     def schedule_event(self, event_type, time):
@@ -67,21 +67,32 @@ class QueueSimulator:
                 self.start_service(i)
                 
     def run(self):
+        print(f"Iniciando simulação para fila G/G/{self.num_servers}/5...")
+        print(f"Chegadas entre {self.arrival_min} e {self.arrival_max}, Atendimento entre {self.service_min} e {self.service_max}")
         self.schedule_event("arrival", self.generate_arrival_time())
         
-        for _ in range(self.num_events):
+        for i in range(self.num_events):
             if not self.events:
+                print("Simulação finalizada antes de atingir", self.num_events, "eventos.")
                 break
             
             self.clock, event_type = self.events.pop(0)
             time_elapsed = self.clock - self.last_event_time
-            self.time_in_state[len(self.queue)] += time_elapsed
+            self.time_in_state[min(len(self.queue), self.capacity)] += time_elapsed
             self.last_event_time = self.clock
             
             if event_type == "arrival":
                 self.process_arrival()
             elif event_type == "departure":
                 self.process_departure()
+            
+            if i % 10000 == 0:
+                print(f"Processando evento {i}: {event_type} - Tempo atual: {self.clock}")
+        
+        print("Simulação concluída. Clientes perdidos:", self.clients_lost)
+        print("Distribuição de Estados:")
+        for state, time in self.time_in_state.items():
+            print(f"Estado {state}: {time / self.clock * 100:.2f}% do tempo")
         
         return {
             "Clientes Perdidos": self.clients_lost,
@@ -89,12 +100,14 @@ class QueueSimulator:
             "Distribuição de Estados": {k: v / self.clock if self.clock > 0 else 0 for k, v in self.time_in_state.items()}
         }
 
-# Simular fila G/G/1/5 e G/G/2/5
+#simular fila G/G/1/5
+print("Rodando simulação para G/G/1/5...")
 sim_gg1_5 = QueueSimulator(num_servers=1, capacity=5, arrival_min=2, arrival_max=5, service_min=3, service_max=5)
 result_gg1_5 = sim_gg1_5.run()
+print("Resultados G/G/1/5:", result_gg1_5) #imprimir resultado G/G/1/5
 
+#simular fila G/G/2/5
+print("Rodando simulação para G/G/2/5...")
 sim_gg2_5 = QueueSimulator(num_servers=2, capacity=5, arrival_min=2, arrival_max=5, service_min=3, service_max=5)
 result_gg2_5 = sim_gg2_5.run()
-
-# Resultados
-result_gg1_5, result_gg2_5
+print("Resultados G/G/2/5:", result_gg2_5) #imprimir resultado G/G/2/5
